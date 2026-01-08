@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
-import { useLocation } from "react-router-dom";
+import { useLocation, Navigate } from "react-router-dom";
 import { useAppSelector } from "../../app/hooks";
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -11,6 +11,14 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const { user } = useAppSelector((state) => state.auth);
   const isLoggedIn = !!user;
+  const isAdmin = user?.role === "Admin" || user?.role === "Moderator";
+
+  // If Admin is in MainLayout, redirect to Admin dashboard
+  // (Unless they are on a very specific set of totally public pages,
+  // but based on user request, they want strict separation)
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   // Define route types
   const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(
@@ -23,9 +31,10 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     location.pathname.startsWith("/saved") ||
     location.pathname.startsWith("/activity") ||
     location.pathname.startsWith("/submit") ||
-    location.pathname.startsWith("/submission-success");
+    location.pathname.startsWith("/submission-success") ||
+    location.pathname.startsWith("/websites");
 
-  const showSidebar = isLoggedIn && isDashboardRoute;
+  const showSidebar = isLoggedIn && isDashboardRoute && !isAdmin;
 
   return (
     <div className="flex flex-col min-h-screen bg-(--color-primary)">
@@ -47,7 +56,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div
             className={
               showSidebar
-                ? "p-6 md:p-10 max-w-7xl mx-auto min-h-[calc(100vh-160px)]"
+                ? "p-6 md:p-10 max-w-8xl mx-auto min-h-[calc(100vh-160px)]"
                 : ""
             }
           >

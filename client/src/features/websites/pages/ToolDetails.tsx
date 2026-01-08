@@ -10,12 +10,21 @@ import {
   HiCheckCircle,
   HiLightningBolt,
   HiOutlineInformationCircle,
-  HiOutlineShare,
   HiOutlineShieldCheck,
   HiArrowLeft,
+  HiThumbUp,
+  HiThumbDown,
+  HiOutlineThumbUp,
+  HiOutlineThumbDown,
+  HiBookmark,
+  HiOutlineBookmark,
 } from "react-icons/hi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
-import { fetchWebsiteDetails } from "../slice/website.slice";
+import {
+  fetchWebsiteDetails,
+  voteWebsite,
+  toggleSaveWebsite,
+} from "../slice/website.slice";
 import Button from "../../../components/ui/Button";
 import { formatDistanceToNow } from "date-fns";
 import CommentList from "../../comments/CommentList";
@@ -26,12 +35,32 @@ const ToolDetails: React.FC = () => {
   const { currentWebsite, isLoading, error } = useAppSelector(
     (state) => state.websites
   );
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchWebsiteDetails(id));
     }
   }, [id, dispatch]);
+
+  const handleToggleSave = () => {
+    if (id && user) {
+      dispatch(toggleSaveWebsite(id));
+    }
+  };
+
+  const handleVote = (voteType: "upvote" | "downvote") => {
+    if (id && user) {
+      dispatch(voteWebsite({ id, voteType }));
+    }
+  };
+
+  const isSaved = Array.isArray(user?.savedWebsites)
+    ? user.savedWebsites.some(
+        (savedItem: string | { _id: string }) =>
+          (typeof savedItem === "string" ? savedItem : savedItem._id) === id
+      )
+    : false;
 
   if (isLoading) {
     return (
@@ -174,13 +203,57 @@ const ToolDetails: React.FC = () => {
                 </Button>
               </a>
               <div className="flex gap-4">
-                <Button variant="outline" fullWidth>
-                  <HiOutlineHeart size={20} />
-                  Upvote
-                </Button>
-                <Button variant="outline" fullWidth>
-                  <HiOutlineShare size={20} />
-                  Share
+                <div className="flex-1 flex items-center bg-gray-100 rounded-2xl px-2 py-2">
+                  <button
+                    onClick={() => handleVote("upvote")}
+                    className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-xl transition-all ${
+                      currentWebsite.userVote === "upvote"
+                        ? "text-blue-600 bg-blue-50"
+                        : "text-gray-500 hover:bg-gray-200"
+                    }`}
+                  >
+                    {currentWebsite.userVote === "upvote" ? (
+                      <HiThumbUp size={20} />
+                    ) : (
+                      <HiOutlineThumbUp size={20} />
+                    )}
+                    <span className="font-bold">
+                      {currentWebsite.stats?.upvotes || 0}
+                    </span>
+                  </button>
+                  <div className="w-px h-6 bg-gray-300 mx-1" />
+                  <button
+                    onClick={() => handleVote("downvote")}
+                    className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-xl transition-all ${
+                      currentWebsite.userVote === "downvote"
+                        ? "text-red-500 bg-red-50"
+                        : "text-gray-500 hover:bg-gray-200"
+                    }`}
+                  >
+                    {currentWebsite.userVote === "downvote" ? (
+                      <HiThumbDown size={20} />
+                    ) : (
+                      <HiOutlineThumbDown size={20} />
+                    )}
+                    <span className="font-bold">
+                      {currentWebsite.stats?.downvotes || 0}
+                    </span>
+                  </button>
+                </div>
+                <Button
+                  variant="outline"
+                  fullWidth
+                  onClick={handleToggleSave}
+                  className={
+                    isSaved ? "text-tertiary border-tertiary bg-tertiary/5" : ""
+                  }
+                >
+                  {isSaved ? (
+                    <HiBookmark size={20} />
+                  ) : (
+                    <HiOutlineBookmark size={20} />
+                  )}
+                  {isSaved ? "Saved" : "Save"}
                 </Button>
               </div>
             </div>
@@ -313,14 +386,63 @@ const ToolDetails: React.FC = () => {
                     </Button>
                   </a>
 
-                  <div className="flex gap-3">
-                    <button className="flex-1 py-3 items-center justify-center flex gap-2 text-xs font-bold text-quinary/70 bg-white border-2 border-secondary/10 rounded-xl hover:border-tertiary hover:text-tertiary transition-all">
-                      <HiOutlineHeart size={16} />
-                      Save
-                    </button>
-                    <button className="flex-1 py-3 items-center justify-center flex gap-2 text-xs font-bold text-quinary/70 bg-white border-2 border-secondary/10 rounded-xl hover:border-quaternary hover:text-quaternary transition-all">
-                      <HiOutlineShare size={16} />
-                      Share
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center bg-gray-100/80 rounded-2xl px-1 py-1 border border-gray-200">
+                      {/* Upvote */}
+                      <button
+                        onClick={() => handleVote("upvote")}
+                        className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl transition-all ${
+                          currentWebsite.userVote === "upvote"
+                            ? "text-blue-600 bg-blue-50 shadow-xs"
+                            : "text-gray-500 hover:bg-gray-200"
+                        }`}
+                      >
+                        {currentWebsite.userVote === "upvote" ? (
+                          <HiThumbUp size={20} />
+                        ) : (
+                          <HiOutlineThumbUp size={20} />
+                        )}
+                        <span className="font-black text-sm">
+                          {currentWebsite.stats?.upvotes || 0}
+                        </span>
+                      </button>
+
+                      <div className="w-px h-8 bg-gray-300 mx-1" />
+
+                      {/* Downvote */}
+                      <button
+                        onClick={() => handleVote("downvote")}
+                        className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-xl transition-all ${
+                          currentWebsite.userVote === "downvote"
+                            ? "text-red-500 bg-red-50 shadow-xs"
+                            : "text-gray-500 hover:bg-gray-200"
+                        }`}
+                      >
+                        {currentWebsite.userVote === "downvote" ? (
+                          <HiThumbDown size={20} />
+                        ) : (
+                          <HiOutlineThumbDown size={20} />
+                        )}
+                        <span className="font-black text-sm">
+                          {currentWebsite.stats?.downvotes || 0}
+                        </span>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={handleToggleSave}
+                      className={`w-full py-4 flex items-center justify-center gap-2 text-sm font-black rounded-2xl transition-all border-2 ${
+                        isSaved
+                          ? "text-tertiary border-tertiary bg-tertiary/5"
+                          : "text-quinary/60 bg-white border-secondary/10 hover:border-tertiary hover:text-tertiary"
+                      }`}
+                    >
+                      {isSaved ? (
+                        <HiBookmark size={20} />
+                      ) : (
+                        <HiOutlineBookmark size={20} />
+                      )}
+                      {isSaved ? "Saved to Collection" : "Save to Collection"}
                     </button>
                   </div>
                 </div>

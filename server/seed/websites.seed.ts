@@ -13,7 +13,7 @@ export const seedWebsites = async (users: any[], admin: any) => {
   console.log("📂 Creating categories...");
   const categories = await Category.insertMany(CATEGORIES);
 
-  console.log("🌐 Creating 30 websites...");
+  console.log(`🌐 Creating ${WEBSITES.length} websites...`);
   const websites = [];
   for (const siteData of WEBSITES) {
     const author = faker.helpers.arrayElement([...users, admin]);

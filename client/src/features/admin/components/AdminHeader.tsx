@@ -9,8 +9,9 @@ import {
   HiOutlineCog,
   HiOutlineClipboardList,
 } from "react-icons/hi";
-import { Link, useLocation } from "react-router-dom";
-import { useAppSelector } from "../../../app/hooks";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "../../../app/hooks";
+import { logoutUser } from "../../auth/slice/auth.slice";
 
 interface AdminHeaderProps {
   onMenuClick?: () => void;
@@ -21,7 +22,14 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchScope, setSearchScope] = useState("All");
   const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    navigate("/login");
+  };
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -215,7 +223,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
                   <HiOutlineClipboardList size={18} /> Admin Logs
                 </Link>
                 <div className="h-px bg-(--color-secondary)/10 my-1 mx-2" />
-                <button className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-black text-red-500 hover:bg-red-50 transition-all">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-5 py-2.5 text-xs font-black text-red-500 hover:bg-red-50 transition-all"
+                >
                   <HiOutlineLogout size={18} /> Logout
                 </button>
               </div>

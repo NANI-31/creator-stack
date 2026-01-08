@@ -9,6 +9,12 @@ export interface NotificationsResponse {
   pages: number;
 }
 
+export interface AdminNotificationsApiResponse {
+  success: boolean;
+  message: string;
+  data: NotificationsResponse;
+}
+
 export interface NotificationFilters {
   status?: "read" | "unread";
   type?: string;
@@ -29,7 +35,7 @@ export const getAdminNotifications = async (
   if (filters.limit) params.append("limit", filters.limit.toString());
   if (filters.page) params.append("page", filters.page.toString());
 
-  return await axios.get<NotificationsResponse>(
+  return await axios.get<AdminNotificationsApiResponse>(
     `/admin/notifications?${params.toString()}`
   );
 };

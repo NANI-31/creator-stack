@@ -23,17 +23,21 @@ const AdminNotifications: React.FC = () => {
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await getAdminNotifications({
+      const { data: responseData } = await getAdminNotifications({
         status: filter === "unread" ? "unread" : undefined,
         limit: 50, // Fetch more for scrolling list
       });
-      setNotifications(data.notifications);
-      setStats({ total: data.total, unreadCount: data.unreadCount });
+
+      setNotifications(responseData.data.notifications || []);
+      setStats({
+        total: responseData.data.total || 0,
+        unreadCount: responseData.data.unreadCount || 0,
+      });
 
       // Update selected notification if it exists in new list, else deselect if deleted
       if (selectedNotification) {
-        const found = data.notifications.find(
-          (n) => n._id === selectedNotification._id
+        const found = (responseData.data.notifications || []).find(
+          (n: Notification) => n._id === selectedNotification._id
         );
         if (found) {
           setSelectedNotification(found);
@@ -44,6 +48,7 @@ const AdminNotifications: React.FC = () => {
         }
       }
     } catch (error) {
+      console.error(error);
       toast.error("Failed to load notifications");
     } finally {
       setIsLoading(false);
@@ -82,6 +87,7 @@ const AdminNotifications: React.FC = () => {
       }
       if (refresh) fetchNotifications();
     } catch (error) {
+      console.error(error);
       //   toast.error("Failed to update notification");
     }
   };
@@ -101,6 +107,7 @@ const AdminNotifications: React.FC = () => {
       }
       toast.success("Notification deleted");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to delete notification");
     }
   };
@@ -115,6 +122,7 @@ const AdminNotifications: React.FC = () => {
       toast.success("All marked as read");
       fetchNotifications();
     } catch (error) {
+      console.error(error);
       toast.error("Failed to update notifications");
     }
   };
@@ -126,6 +134,7 @@ const AdminNotifications: React.FC = () => {
       fetchNotifications();
       toast.success("Cleared read notifications");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to clear notifications");
     }
   };

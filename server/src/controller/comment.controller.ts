@@ -152,45 +152,51 @@ export const voteComment = async (req: Request, res: Response) => {
     });
 
     if (existingVote) {
-      // If vote type is same, remove vote (toggle off)
       if (existingVote.voteType === voteType) {
+        // Toggle Off
         await Vote.findByIdAndDelete(existingVote._id);
 
-        if (voteType === "upvote") {
-          comment.upvotes = Math.max(0, comment.upvotes - 1);
-        } else {
-          comment.downvotes = Math.max(0, comment.downvotes - 1);
-        }
-        await comment.save();
+        const update =
+          voteType === "upvote"
+            ? { $inc: { upvotes: -1 } }
+            : { $inc: { downvotes: -1 } };
+
+        const updatedComment = await Comment.findByIdAndUpdate(
+          commentId,
+          update,
+          { new: true }
+        );
 
         return sendResponse(res, 200, true, "Vote removed successfully", {
-          upvotes: comment.upvotes,
-          downvotes: comment.downvotes,
+          upvotes: updatedComment?.upvotes || 0,
+          downvotes: updatedComment?.downvotes || 0,
           userVote: null,
         });
       } else {
-        // Switch vote type
+        // Switch Vote Type
         existingVote.voteType = voteType;
         await existingVote.save();
 
-        if (voteType === "upvote") {
-          comment.upvotes += 1;
-          comment.downvotes = Math.max(0, comment.downvotes - 1);
-        } else {
-          comment.downvotes += 1;
-          comment.upvotes = Math.max(0, comment.upvotes - 1);
-        }
-        await comment.save();
+        const update =
+          voteType === "upvote"
+            ? { $inc: { upvotes: 1, downvotes: -1 } }
+            : { $inc: { upvotes: -1, downvotes: 1 } };
+
+        const updatedComment = await Comment.findByIdAndUpdate(
+          commentId,
+          update,
+          { new: true }
+        );
 
         return sendResponse(res, 200, true, "Vote updated successfully", {
-          upvotes: comment.upvotes,
-          downvotes: comment.downvotes,
+          upvotes: updatedComment?.upvotes || 0,
+          downvotes: updatedComment?.downvotes || 0,
           userVote: voteType,
         });
       }
     }
 
-    // New vote
+    // New Vote
     const newVote = new Vote({
       user: userId,
       target: commentId,
@@ -199,16 +205,18 @@ export const voteComment = async (req: Request, res: Response) => {
     });
     await newVote.save();
 
-    if (voteType === "upvote") {
-      comment.upvotes += 1;
-    } else {
-      comment.downvotes += 1;
-    }
-    await comment.save();
+    const update =
+      voteType === "upvote"
+        ? { $inc: { upvotes: 1 } }
+        : { $inc: { downvotes: 1 } };
+
+    const updatedComment = await Comment.findByIdAndUpdate(commentId, update, {
+      new: true,
+    });
 
     return sendResponse(res, 200, true, "Vote recorded successfully", {
-      upvotes: comment.upvotes,
-      downvotes: comment.downvotes,
+      upvotes: updatedComment?.upvotes || 0,
+      downvotes: updatedComment?.downvotes || 0,
       userVote: voteType,
     });
   } catch (error: any) {

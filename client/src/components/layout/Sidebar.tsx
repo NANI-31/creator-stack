@@ -3,7 +3,6 @@ import { NavLink } from "react-router-dom";
 import {
   HiOutlineHome,
   HiOutlineGlobeAlt,
-  HiOutlineCollection,
   HiOutlineUserCircle,
   HiOutlineBookmark,
   HiOutlineChartBar,
@@ -25,7 +24,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const menuItems = [
     { name: "Dashboard Overview", icon: HiOutlineHome, path: "/dashboard" },
     { name: "Explore Websites", icon: HiOutlineGlobeAlt, path: "/websites" },
-    { name: "Categories", icon: HiOutlineCollection, path: "/categories" },
     {
       name: "My Contributions",
       icon: HiOutlineUserCircle,

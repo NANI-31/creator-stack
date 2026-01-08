@@ -2,7 +2,15 @@ import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAppSelector } from "../../../app/hooks";
 
-const ProtectedRoute: React.FC = () => {
+interface ProtectedRouteProps {
+  allowedRoles?: string[];
+  redirectPath?: string;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  allowedRoles,
+  redirectPath = "/login",
+}) => {
   const { user, isLoading } = useAppSelector((state) => state.auth);
 
   if (isLoading) {
@@ -14,7 +22,17 @@ const ProtectedRoute: React.FC = () => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  // Role-based protection
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // If user is Admin but route requires User role, redirect to admin dashboard
+    if (user.role === "Admin" || user.role === "Moderator") {
+      return <Navigate to="/admin" replace />;
+    }
+    // Otherwise redirect to home or login
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

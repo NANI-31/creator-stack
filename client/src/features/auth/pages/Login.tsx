@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { loginUser, clearError } from "../slice/auth.slice";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("aa1@a.com");
+  const [email, setEmail] = useState("a1@a.com");
   const [password, setPassword] = useState("a");
   const [rememberMe, setRememberMe] = useState(false);
 

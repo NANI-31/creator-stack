@@ -10,6 +10,7 @@ import ForgotPassword from "./features/auth/pages/ForgotPassword";
 import Home from "./features/websites/pages/Home";
 import Dashboard from "./features/dashboard/pages/Dashboard";
 import MyContributions from "./features/dashboard/pages/MyContributions";
+import SavedWebsites from "./features/dashboard/pages/SavedWebsites";
 import MainLayout from "./components/layout/MainLayout";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
 import SubmitWebsite from "./features/websites/pages/SubmitWebsite";
@@ -34,7 +35,10 @@ function App() {
     <Router>
       <Routes>
         {/* Admin Routes - Completely separate from MainLayout */}
-        <Route path="/admin" element={<ProtectedRoute />}>
+        <Route
+          path="/admin"
+          element={<ProtectedRoute allowedRoles={["Admin", "Moderator"]} />}
+        >
           <Route element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="submissions" element={<SubmissionsManager />} />
@@ -63,8 +67,20 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
 
-                {/* Protected Routes within Main App */}
-                <Route element={<ProtectedRoute />}>
+                {/* Protected Routes within Main App (Limited to non-admin roles) */}
+                <Route
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        "User",
+                        "Developer",
+                        "Designer",
+                        "Creator",
+                        "Editor",
+                      ]}
+                    />
+                  }
+                >
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route
                     path="/my-contributions"
@@ -75,7 +91,7 @@ function App() {
                     path="/submission-success"
                     element={<SubmissionSuccess />}
                   />
-                  <Route path="/saved" element={<Dashboard />} />
+                  <Route path="/saved" element={<SavedWebsites />} />
                   <Route path="/activity" element={<Dashboard />} />
                   <Route path="/settings" element={<Dashboard />} />
                 </Route>

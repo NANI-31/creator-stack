@@ -5,10 +5,12 @@ export interface User {
   email: string;
   role: string;
   avatar?: string;
+  savedWebsites?: string[] | Website[];
 }
 
 export interface WebsiteStats {
   upvotes: number;
+  downvotes: number;
   rating: number;
   commentCount?: number;
   comments?: number;
@@ -25,6 +27,7 @@ export interface Website {
   author: string | User;
   status: "Pending" | "Approved" | "Rejected";
   stats: WebsiteStats;
+  userVote?: "upvote" | "downvote" | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,8 +86,8 @@ export interface AuditLog {
     | "Other";
   entityId: string;
   details?: {
-    before?: any;
-    after?: any;
+    before?: unknown;
+    after?: unknown;
     notes?: string;
   };
   ipAddress?: string;

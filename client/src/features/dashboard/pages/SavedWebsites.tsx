@@ -5,27 +5,28 @@ import {
   HiOutlineSearch,
   HiOutlineSortDescending,
   HiOutlineRefresh,
-  HiOutlineGlobeAlt,
+  HiOutlineBookmark,
 } from "react-icons/hi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
-import { fetchAllWebsites, fetchCategories } from "../slice/website.slice";
-import WebsiteCard from "../components/WebsiteCard";
+import {
+  fetchSavedWebsites,
+  fetchCategories,
+} from "../../websites/slice/website.slice";
+import WebsiteCard from "../../websites/components/WebsiteCard";
 import Button from "../../../components/ui/Button";
 import type { Website, Category } from "../../../types";
 
-type SortOption = "trending" | "upvotes" | "rating" | "comments" | "newest";
+type SortOption = "trending" | "upvotes" | "rating" | "newest";
 
-const WebsiteListView: React.FC = () => {
+const SavedWebsites: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { websites, categories, isLoading, error, totalWebsites } =
+  const { savedWebsites, categories, isLoading, error, totalSaved } =
     useAppSelector((state) => state.websites);
-  const { user } = useAppSelector((state) => state.auth);
 
-  const [sortBy, setSortBy] = useState<SortOption>("trending");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -39,9 +40,9 @@ const WebsiteListView: React.FC = () => {
     if (sortBy === "newest") sortQuery = "newest";
 
     dispatch(
-      fetchAllWebsites({
+      fetchSavedWebsites({
         page,
-        limit: 12, // Increased limit for better grid filling
+        limit: 12,
         category: categoryFilter !== "all" ? categoryFilter : undefined,
         sort: sortQuery,
       })
@@ -62,37 +63,15 @@ const WebsiteListView: React.FC = () => {
     setPage((prev) => prev + 1);
   };
 
-  // Sort and filter websites
-  // Filter websites (only search is client-side now)
-  const filteredWebsites = React.useMemo(() => {
-    let result = [...websites];
-
-    // Filter by search
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (w) =>
-          w.name.toLowerCase().includes(term) ||
-          w.description.toLowerCase().includes(term)
-      );
-    }
-
-    // Server handles category and sort, so we just return the result (filtered by search)
-    return result;
-  }, [websites, searchTerm]);
-
   const handleRefresh = () => {
     setPage(1);
-    // Force re-fetch even if page is already 1, strict dependency on page handles it if page changes, but if already 1, we might need to force.
-    // However, since page is a dependency, if we set it to 1 and it was 1, useEffect might not fire if React bails out.
-    // But dispatching directly here is better to be safe.
     let sortQuery = "newest";
     if (sortBy === "trending" || sortBy === "upvotes") sortQuery = "trending";
     if (sortBy === "rating") sortQuery = "top-rated";
     if (sortBy === "newest") sortQuery = "newest";
 
     dispatch(
-      fetchAllWebsites({
+      fetchSavedWebsites({
         page: 1,
         limit: 12,
         category: categoryFilter !== "all" ? categoryFilter : undefined,
@@ -101,17 +80,32 @@ const WebsiteListView: React.FC = () => {
     );
   };
 
+  // Client-side search filtering (since API search might be efficient or not, but existing consistent with WebsiteListView)
+  const filteredWebsites = React.useMemo(() => {
+    if (!searchTerm) return savedWebsites;
+    const term = searchTerm.toLowerCase();
+    return savedWebsites.filter(
+      (w) =>
+        w.name.toLowerCase().includes(term) ||
+        w.description.toLowerCase().includes(term)
+    );
+  }, [savedWebsites, searchTerm]);
+
   return (
-    <div className="min-h-screen bg-(--color-primary)">
+    <div className="min-h-screen bg-(--color-primary) animate-in fade-in duration-700">
       {/* Page Header */}
-      <div className="bg-linear-to-b from-(--color-primary) to-white py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <h1 className="text-4xl md:text-5xl font-black text-(--color-sextary) mb-4">
-            Discover Useful Websites
-          </h1>
-          <p className="text-lg text-(--color-quinary)/70 max-w-2xl mx-auto">
-            Handpicked tools the community finds valuable. Browse, vote, and
-            share your favorites.
+      <div className="bg-linear-to-b from-(--color-primary) to-white py-8 md:py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-quaternary/10 text-quaternary flex items-center justify-center">
+              <HiOutlineBookmark size={24} />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-(--color-sextary)">
+              Saved Collections
+            </h1>
+          </div>
+          <p className="text-lg text-(--color-quinary)/70 max-w-2xl ml-16">
+            Your personal library of tools and resources.
           </p>
         </div>
       </div>
@@ -119,7 +113,7 @@ const WebsiteListView: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-8xl mx-auto px-4 sm:px-6 pb-20">
         {/* Search & Filter Bar */}
-        <div className="bg-white rounded-3xl border border-(--color-secondary)/30 p-4 md:p-6 shadow-sm mb-8 -mt-8 relative z-10">
+        <div className="bg-white rounded-3xl border border-(--color-secondary)/30 p-4 md:p-6 shadow-sm mb-8 relative z-10">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="relative flex-1">
@@ -129,7 +123,7 @@ const WebsiteListView: React.FC = () => {
               />
               <input
                 type="text"
-                placeholder="Search websites..."
+                placeholder="Search your saved websites..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 bg-(--color-primary)/30 border border-transparent focus:border-quaternary/30 rounded-2xl outline-none text-sm font-medium text-(--color-sextary) transition-all"
@@ -147,11 +141,10 @@ const WebsiteListView: React.FC = () => {
                 onChange={(e) => handleSortChange(e.target.value as SortOption)}
                 className="pl-11 pr-8 py-3 bg-(--color-primary)/30 border border-transparent focus:border-quaternary/30 rounded-2xl outline-none text-sm font-bold text-(--color-sextary) appearance-none cursor-pointer transition-all min-w-40"
               >
+                <option value="newest">Newest Saved</option>
                 <option value="trending">Trending</option>
                 <option value="upvotes">Most Upvoted</option>
                 <option value="rating">Highest Rated</option>
-                <option value="comments">Most Discussed</option>
-                <option value="newest">Newest</option>
               </select>
             </div>
 
@@ -213,24 +206,22 @@ const WebsiteListView: React.FC = () => {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm font-bold text-(--color-quinary)/50">
-            {filteredWebsites.length} website
+            {filteredWebsites.length} saved website
             {filteredWebsites.length !== 1 ? "s" : ""} found
           </p>
-          {(!user || (user.role !== "Admin" && user.role !== "Moderator")) && (
-            <Link
-              to="/submit"
-              className="text-sm font-bold text-quaternary hover:underline"
-            >
-              + Submit a Website
-            </Link>
-          )}
+          <Link
+            to="/websites"
+            className="text-sm font-bold text-quaternary hover:underline"
+          >
+            + Browse More
+          </Link>
         </div>
 
         {/* Website Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
             // Loading Skeletons
-            Array(6)
+            Array(4)
               .fill(0)
               .map((_, i) => (
                 <div
@@ -241,33 +232,25 @@ const WebsiteListView: React.FC = () => {
           ) : error ? (
             // Error State
             <div className="col-span-2 bg-white rounded-3xl border border-red-200 p-12 text-center">
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-4">
-                <HiOutlineGlobeAlt size={32} />
-              </div>
-              <h3 className="text-xl font-black text-(--color-sextary) mb-2">
-                Something went wrong
-              </h3>
-              <p className="text-(--color-quinary)/60 mb-6">{error}</p>
+              <p className="text-red-500 mb-4">{error}</p>
               <Button variant="outline" onClick={handleRefresh}>
                 Try Again
               </Button>
             </div>
           ) : filteredWebsites.length === 0 ? (
             // Empty State
-            <div className="col-span-2 bg-white rounded-3xl border border-(--color-secondary)/30 p-12 text-center">
+            <div className="col-span-2 bg-white rounded-3xl border border-(--color-secondary)/30 p-16 text-center">
               <div className="w-16 h-16 bg-(--color-primary) rounded-2xl flex items-center justify-center text-quaternary/40 mx-auto mb-4">
-                <HiOutlineGlobeAlt size={32} />
+                <HiOutlineBookmark size={32} />
               </div>
               <h3 className="text-xl font-black text-(--color-sextary) mb-2">
-                No websites found
+                No saved websites
               </h3>
               <p className="text-(--color-quinary)/60 mb-6">
-                {searchTerm || categoryFilter !== "all"
-                  ? "Try adjusting your search or filters"
-                  : "Be the first to submit a website!"}
+                Start exploring and bookmark websites you want to keep handy.
               </p>
-              <Link to="/submit">
-                <Button variant="primary">Submit a Website</Button>
+              <Link to="/websites">
+                <Button variant="primary">Browse Websites</Button>
               </Link>
             </div>
           ) : (
@@ -292,14 +275,14 @@ const WebsiteListView: React.FC = () => {
 
         {/* Load More */}
         {!isLoading &&
-          websites.length < totalWebsites &&
+          savedWebsites.length < totalSaved &&
           filteredWebsites.length > 0 && (
             <div className="mt-10 text-center">
               <button
                 onClick={handleLoadMore}
                 className="px-8 py-3 bg-white border-2 border-(--color-secondary)/30 rounded-2xl text-sm font-bold text-(--color-quinary)/60 hover:border-quaternary hover:text-quaternary transition-all"
               >
-                Load More Websites
+                Load More Saved Items
               </button>
             </div>
           )}
@@ -308,4 +291,4 @@ const WebsiteListView: React.FC = () => {
   );
 };
 
-export default WebsiteListView;
+export default SavedWebsites;

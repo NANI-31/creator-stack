@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { HiArrowSmUp, HiArrowSmDown, HiReply, HiTrash } from "react-icons/hi";
+import {
+  HiThumbUp,
+  HiThumbDown,
+  HiOutlineThumbUp,
+  HiOutlineThumbDown,
+  HiTrash,
+} from "react-icons/hi";
 import type { Comment } from "../../types/comment.types";
 import { useAppSelector } from "../../app/hooks";
 import CommentForm from "./CommentForm";
@@ -43,9 +49,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const canDelete =
     user && (user._id === comment.author._id || user.role === "Admin");
 
-  const isAuthor =
-    websiteAuthorId === comment.author._id ||
-    websiteAuthorId === (comment.author as any)._id;
+  const isAuthor = websiteAuthorId === comment.author._id;
 
   const handleVote = async (voteType: "upvote" | "downvote") => {
     if (!user) {
@@ -57,9 +61,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
       const response = await commentsApi.voteComment(comment._id, voteType);
       if (response.success) {
         setLocalStats({
-          upvotes: response.payload.upvotes,
-          downvotes: response.payload.downvotes,
-          userVote: response.payload.userVote,
+          upvotes: response.data.upvotes,
+          downvotes: response.data.downvotes,
+          userVote: response.data.userVote,
         });
       }
     } catch (error) {
@@ -128,56 +132,82 @@ const CommentItem: React.FC<CommentItemProps> = ({
         </div>
 
         {/* Comment Actions */}
-        <div className="flex items-center gap-4 mt-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => handleVote("upvote")}
-              className={`p-1 rounded-md transition-colors ${
-                localStats.userVote === "upvote"
-                  ? "bg-green-50 text-green-500"
-                  : "text-gray-400 hover:bg-gray-100 hover:text-green-500"
-              }`}
-            >
-              <HiArrowSmUp size={18} />
-            </button>
-            <span
-              className={`text-xs font-bold ${
-                localStats.userVote === "upvote"
-                  ? "text-green-500"
-                  : localStats.userVote === "downvote"
-                  ? "text-red-500"
-                  : "text-gray-400"
-              }`}
-            >
-              {localStats.upvotes - localStats.downvotes}
-            </span>
-            <button
-              onClick={() => handleVote("downvote")}
-              className={`p-1 rounded-md transition-colors ${
-                localStats.userVote === "downvote"
-                  ? "bg-red-50 text-red-500"
-                  : "text-gray-400 hover:bg-gray-100 hover:text-red-500"
-              }`}
-            >
-              <HiArrowSmDown size={18} />
-            </button>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center bg-gray-100/80 rounded-full px-1 py-0.5">
+            {/* Upvote */}
+            <div className="flex items-center">
+              <button
+                onClick={() => handleVote("upvote")}
+                className={`p-2 rounded-full transition-all flex items-center justify-center ${
+                  localStats.userVote === "upvote"
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-500 hover:bg-gray-200 hover:text-gray-800"
+                }`}
+                title="Like"
+              >
+                {localStats.userVote === "upvote" ? (
+                  <HiThumbUp size={18} />
+                ) : (
+                  <HiOutlineThumbUp size={18} />
+                )}
+              </button>
+              <span
+                className={`text-[11px] font-bold pr-2 -ml-0.5 ${
+                  localStats.userVote === "upvote"
+                    ? "text-blue-600"
+                    : "text-gray-500"
+                }`}
+              >
+                {localStats.upvotes}
+              </span>
+            </div>
+
+            {/* Vertical Divider */}
+            <div className="w-px h-4 bg-gray-300 mx-0.5" />
+
+            {/* Downvote */}
+            <div className="flex items-center">
+              <button
+                onClick={() => handleVote("downvote")}
+                className={`p-2 rounded-full transition-all flex items-center justify-center ${
+                  localStats.userVote === "downvote"
+                    ? "text-red-500 bg-red-50"
+                    : "text-gray-500 hover:bg-gray-200 hover:text-gray-800"
+                }`}
+                title="Dislike"
+              >
+                {localStats.userVote === "downvote" ? (
+                  <HiThumbDown size={18} />
+                ) : (
+                  <HiOutlineThumbDown size={18} />
+                )}
+              </button>
+              <span
+                className={`text-[11px] font-bold pr-2 -ml-0.5 ${
+                  localStats.userVote === "downvote"
+                    ? "text-red-600"
+                    : "text-gray-500"
+                }`}
+              >
+                {localStats.downvotes}
+              </span>
+            </div>
           </div>
 
           <button
             onClick={() => setIsReplying(!isReplying)}
-            className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-quaternary transition-colors"
+            className="px-4 py-2 rounded-full text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
           >
-            <HiReply size={16} />
             Reply
           </button>
 
           {canDelete && (
             <button
               onClick={() => onDelete(comment._id)}
-              className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-red-500 transition-colors"
+              className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              title="Delete"
             >
               <HiTrash size={16} />
-              Delete
             </button>
           )}
         </div>

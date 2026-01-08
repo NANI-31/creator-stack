@@ -4,14 +4,16 @@ import {
   getAllWebsites,
   getTrending,
   getWebsiteById,
+  voteWebsite,
 } from "../controller/website.controller";
-import { protect } from "../middlewares/auth.middleware";
+import { protect, optionalProtect } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get("/", getAllWebsites);
-router.get("/trending", getTrending);
-router.get("/:id", getWebsiteById);
+router.get("/", optionalProtect, getAllWebsites);
+router.get("/trending", optionalProtect, getTrending);
+router.get("/:id", optionalProtect, getWebsiteById);
+router.post("/:id/vote", protect, voteWebsite);
 router.post("/", protect, createWebsite);
 
 export default router;

@@ -19,13 +19,13 @@ interface NotificationListProps {
 }
 
 const NotificationList: React.FC<NotificationListProps> = ({
-  notifications,
+  notifications = [],
   selectedId,
   onSelect,
   onDelete,
   onMarkRead,
 }) => {
-  if (notifications.length === 0) {
+  if (!notifications || notifications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-(--color-quinary)/50">
         <HiInformationCircle size={48} className="mb-4 opacity-20" />

@@ -41,7 +41,7 @@ export const seedUsers = async () => {
       email: `a${i}@a.com`,
       password: plainPassword,
       role: faker.helpers.arrayElement(roles),
-      status: faker.helpers.arrayElement(statuses),
+      status: "Active",
       reputation: faker.number.int({ min: -100, max: 1000 }),
       bio: faker.person.bio(),
       isVerified: faker.datatype.boolean(),

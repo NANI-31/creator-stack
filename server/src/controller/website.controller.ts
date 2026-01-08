@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Website from "../model/website.model";
 import Category from "../model/category.model";
+import Vote from "../model/vote.model";
 import { sendResponse, sendError } from "../utils/responseHandler";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
@@ -65,8 +66,30 @@ export const getAllWebsites = async (req: Request, res: Response) => {
 
     const total = await Website.countDocuments(query);
 
+    const userId = (req as AuthRequest).user?._id;
+    let websitesWithVote: any[] = websites;
+
+    if (userId) {
+      const userVotes = await Vote.find({
+        user: userId,
+        target: { $in: websites.map((w) => w._id) },
+        targetType: "Website",
+      });
+
+      const voteMap = new Map(
+        userVotes.map((v) => [v.target.toString(), v.voteType])
+      );
+
+      websitesWithVote = websites.map((website) => {
+        const websiteObj = website.toObject();
+        (websiteObj as any).userVote =
+          voteMap.get(website._id.toString()) || null;
+        return websiteObj;
+      });
+    }
+
     return sendResponse(res, 200, true, "Websites fetched successfully", {
-      websites,
+      websites: websitesWithVote,
       total,
       page: Number(page),
       limit: Number(limit),
@@ -83,7 +106,35 @@ export const getTrending = async (req: Request, res: Response) => {
       .sort({ "stats.upvotes": -1 })
       .limit(8);
 
-    return sendResponse(res, 200, true, "Trending websites fetched", websites);
+    const userId = (req as AuthRequest).user?._id;
+    let websitesWithVote: any[] = websites;
+
+    if (userId) {
+      const userVotes = await Vote.find({
+        user: userId,
+        target: { $in: websites.map((w) => w._id) },
+        targetType: "Website",
+      });
+
+      const voteMap = new Map(
+        userVotes.map((v) => [v.target.toString(), v.voteType])
+      );
+
+      websitesWithVote = websites.map((website) => {
+        const websiteObj = website.toObject();
+        (websiteObj as any).userVote =
+          voteMap.get(website._id.toString()) || null;
+        return websiteObj;
+      });
+    }
+
+    return sendResponse(
+      res,
+      200,
+      true,
+      "Trending websites fetched",
+      websitesWithVote
+    );
   } catch (err: any) {
     return sendError(res, 500, "Internal Server Error", err.message);
   }
@@ -101,14 +152,120 @@ export const getWebsiteById = async (req: Request, res: Response) => {
       return sendError(res, 404, "Website not found");
     }
 
+    const userId = (req as AuthRequest).user?._id;
+    const websiteObj = website.toObject();
+
+    if (userId) {
+      const vote = await Vote.findOne({
+        user: userId,
+        target: id,
+        targetType: "Website",
+      });
+      (websiteObj as any).userVote = vote ? vote.voteType : null;
+    }
+
     return sendResponse(
       res,
       200,
       true,
       "Website details fetched successfully",
-      website
+      websiteObj
     );
   } catch (err: any) {
     return sendError(res, 500, "Internal Server Error", err.message);
+  }
+};
+
+export const voteWebsite = async (req: any, res: Response) => {
+  try {
+    const { id: websiteId } = req.params;
+    const { voteType } = req.body; // "upvote" or "downvote"
+    const userId = req.user?._id;
+
+    if (!voteType || !["upvote", "downvote"].includes(voteType)) {
+      return sendError(res, 400, "Invalid vote type");
+    }
+
+    const website = await Website.findById(websiteId);
+    if (!website) {
+      return sendError(res, 404, "Website not found");
+    }
+
+    const Vote = (await import("../model/vote.model")).default;
+
+    const existingVote = await Vote.findOne({
+      user: userId,
+      target: websiteId,
+      targetType: "Website",
+    });
+
+    let updatedWebsite;
+
+    if (existingVote) {
+      if (existingVote.voteType === voteType) {
+        // Toggle Off
+        await Vote.findByIdAndDelete(existingVote._id);
+
+        const update =
+          voteType === "upvote"
+            ? { $inc: { "stats.upvotes": -1 } }
+            : { $inc: { "stats.downvotes": -1 } };
+
+        updatedWebsite = await Website.findByIdAndUpdate(websiteId, update, {
+          new: true,
+        });
+
+        return sendResponse(res, 200, true, "Vote removed successfully", {
+          upvotes: updatedWebsite?.stats.upvotes || 0,
+          downvotes: updatedWebsite?.stats.downvotes || 0,
+          userVote: null,
+        });
+      } else {
+        // Switch Vote Type
+        existingVote.voteType = voteType;
+        await existingVote.save();
+
+        const update =
+          voteType === "upvote"
+            ? { $inc: { "stats.upvotes": 1, "stats.downvotes": -1 } }
+            : { $inc: { "stats.upvotes": -1, "stats.downvotes": 1 } };
+
+        updatedWebsite = await Website.findByIdAndUpdate(websiteId, update, {
+          new: true,
+        });
+
+        return sendResponse(res, 200, true, "Vote updated successfully", {
+          upvotes: updatedWebsite?.stats.upvotes || 0,
+          downvotes: updatedWebsite?.stats.downvotes || 0,
+          userVote: voteType,
+        });
+      }
+    }
+
+    // New Vote
+    const newVote = new Vote({
+      user: userId,
+      target: websiteId,
+      targetType: "Website",
+      voteType,
+    });
+    await newVote.save();
+
+    const update =
+      voteType === "upvote"
+        ? { $inc: { "stats.upvotes": 1 } }
+        : { $inc: { "stats.downvotes": 1 } };
+
+    updatedWebsite = await Website.findByIdAndUpdate(websiteId, update, {
+      new: true,
+    });
+
+    return sendResponse(res, 200, true, "Vote recorded successfully", {
+      upvotes: updatedWebsite?.stats.upvotes || 0,
+      downvotes: updatedWebsite?.stats.downvotes || 0,
+      userVote: voteType,
+    });
+  } catch (error: any) {
+    return sendError(res, 500, "Internal Server Error", error.message);
   }
 };

@@ -40,24 +40,29 @@ const UsersManager: React.FC = () => {
       if (searchQuery) params.search = searchQuery;
 
       const { data } = await adminApi.getUsers(params);
+      console.log("Users API Response:", data);
+
+      // Defensive check: ensure data.data is an array
+      const usersArray = Array.isArray(data.data) ? data.data : [];
+
       // Map API response to local User type
-      const mappedUsers = data.data.map((u: any) => ({
+      const mappedUsers = usersArray.map((u: any) => ({
         id: u._id,
-        name: u.fullName,
+        name: u.fullName || u.username || "Unknown User",
         email: u.email,
         avatar:
           u.avatar ||
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`,
         role: u.role,
         status: u.status,
-        reputation: u.reputation,
+        reputation: u.reputation || 0,
         submissions: u.websitesContributed?.length || 0,
         comments: 0, // Need to implement comment count on backend if needed
         joinedDate: u.createdAt,
       }));
       setUsers(mappedUsers);
     } catch (error) {
-      console.error("Failed to fetch users");
+      console.error("Failed to fetch users:", error);
     } finally {
       setLoading(false);
     }
