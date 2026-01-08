@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@tailwind utilities;
+
+@theme {
+  --color-primary: #feeaf0;
+  --color-secondary: #f0d0c7;
+  --color-tertiary: #f09410;
+  --color-quaternary: #bc430d;
+  --color-quinary: #5e2207;
+  --color-sextary: #241705;
+
+  /* --color-secondary: #feeaf0;
+  --color-primary: #f0d0c7;
+  --color-quaternary: #f09410;
+  --color-quinary: #bc430d;
+  --color-sextary: #5e2207;
+  --color-septenary: #241705; */
+
+  --color-dark-primary: #241705;
+  --color-dark-secondary: #5e2207;
+  --color-dark-tertiary: #bc4300;
+  --color-dark-quaternary: #f09410;
+  --color-dark-quinary: #f0d0c7;
+  --color-dark-sextary: #feeaf0;
+}
+
+@layer base {
+  :root {
+    --bg-primary: var(--color-primary);
+    --bg-secondary: var(--color-secondary);
+    --btn-primary: var(--color-tertiary);
+    --btn-hover: var(--color-quaternary);
+    --text-main: var(--color-quinary);
+    --text-heading: var(--color-sextary);
+  }
+
+  [data-theme="dark"] {
+    --bg-primary: var(--color-dark-primary);
+    --bg-secondary: var(--color-dark-secondary);
+    --btn-primary: var(--color-dark-tertiary);
+    --btn-hover: var(--color-dark-quaternary);
+    --text-main: var(--color-dark-quinary);
+    --text-heading: var(--color-dark-sextary);
+  }
+
+  body {
+    @apply bg-[var(--bg-primary)] text-[var(--text-main)] transition-colors duration-300;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+}
